@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db.models import Count
+from bangazon_api.models.order_product import OrderProduct
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
 from rest_framework import status
@@ -170,7 +171,7 @@ class ProductView(ViewSet):
         if number_sold:
             products = products.annotate(
                 order_count=Count('orders')
-            ).filter(order_count__lt=number_sold)
+            ).filter(order_count__gte=number_sold)
 
         if order is not None:
             order_filter = f'-{order}' if direction == 'desc' else order
@@ -251,6 +252,8 @@ class ProductView(ViewSet):
             product = Product.objects.get(pk=pk)
             order = Order.objects.get(
                 user=request.auth.user, completed_on=None)
+            orderProduct = OrderProduct.objects.get(product=product, order=order)
+            orderProduct.delete()
             return Response(None, status=status.HTTP_204_NO_CONTENT)
         except Product.DoesNotExist as ex:
             return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
