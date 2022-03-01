@@ -26,14 +26,16 @@ class Product(models.Model):
         Returns:
             number -- The average rating for the product
         """
-        # TODO: Fix Divide by zero error
+        
 
         total_rating = 0
         for rating in self.ratings.all():
             total_rating += rating.score
-
-        avg = total_rating / self.ratings.count()
-        return avg
+        try:
+            avg = total_rating / self.ratings.count()
+            return avg
+        except ZeroDivisionError:
+            return "unrated"
 
     @property
     def number_purchased(self):
