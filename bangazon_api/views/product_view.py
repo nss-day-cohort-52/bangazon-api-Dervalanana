@@ -167,11 +167,19 @@ class ProductView(ViewSet):
         order = request.query_params.get('order_by', None)
         direction = request.query_params.get('direction', None)
         name = request.query_params.get('name', None)
+        min_price = request.query_params.get('min_price', None)
+        location = request.query_params.get('location', None)
+        
 
         if number_sold:
             products = products.annotate(
                 order_count=Count('orders')
             ).filter(order_count__gte=number_sold)
+            
+        if min_price is not None:
+            products = products.filter(price__gte=min_price)
+        if location is not None:
+            products = products.filter(location__contains=location)
 
         if order is not None:
             order_filter = f'-{order}' if direction == 'desc' else order
