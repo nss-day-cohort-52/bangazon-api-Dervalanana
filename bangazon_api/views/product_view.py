@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db.models import Count
+from bangazon_api.models.like import Like
 from bangazon_api.models.order_product import OrderProduct
 from rest_framework.viewsets import ViewSet
 from rest_framework.response import Response
@@ -8,6 +9,7 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from bangazon_api.serializers.product_serializer import AddLikeSerializer, LikeSerializer
 from bangazon_api.helpers import STATE_NAMES
 from bangazon_api.models import Product, Store, Category, Order, Rating, Recommendation
 from bangazon_api.serializers import (
@@ -354,3 +356,58 @@ class ProductView(ViewSet):
             )
 
         return Response({'message': 'Rating added'}, status=status.HTTP_201_CREATED)
+    
+
+    @action(methods=['post'], detail=True)
+    def like(self,request,pk):
+        """Add a like product"""
+        try:
+            product= Product.objects.get(pk=pk)
+            Like.objects.create(
+                product = product,
+                customer = request.auth.user
+            )
+            return Response({'message': 'product liked'}, status=status.HTTP_201_CREATED)
+        except Product.DoesNotExist as ex:
+            return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+        
+    @swagger_auto_schema(
+        method='DELETE',
+        responses={
+            201: openapi.Response(
+                description="Returns message that product was unliked",
+                schema=MessageSerializer()
+            ),
+            404: openapi.Response(
+                description="Either the User, Like, or Product was not found",
+                schema=MessageSerializer()
+            ),
+        }
+    )
+    @action(methods=['delete'], detail=True)
+    def unlike(self,request,pk):
+        """Add a like story"""
+        try:
+            product= Product.objects.get(pk=pk)
+            like = Like.objects.get(
+                product = product,
+                customer = request.auth.user
+            )
+            like.delete()
+            return Response(None, status=status.HTTP_204_NO_CONTENT)
+        except Product.DoesNotExist as ex:
+            print('product')
+            return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+        except Like.DoesNotExist as ex:
+            print('like')
+            return Response({'message': ex.args[0]}, status=status.HTTP_404_NOT_FOUND)
+    
+    @action(methods=['get'], detail=False)    
+    def liked(self,request):
+        """return current users likes"""
+        try:
+            likes = Like.objects.filter(customer=request.auth.user)
+            serializer = LikeSerializer(likes, many=True)
+            return Response(serializer.data)
+        except Like.DoesNotExist as ex:
+            return Response({'message': 'like something you putz'}, status=status.HTTP_404_NOT_FOUND)
