@@ -55,7 +55,7 @@ class OrderView(ViewSet):
             schema=MessageSerializer()
         ),
     })
-    @action(methods=['put'], detail=True)
+    @action(methods=['PUT'], detail=True)
     def complete(self, request, pk):
         """Complete an order by adding a payment type and completed data
         """
