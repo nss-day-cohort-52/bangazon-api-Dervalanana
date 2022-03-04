@@ -84,3 +84,14 @@ class ProductTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         response = self.client.get(f'/api/products/{product.id}')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        
+    def test_add_rating(self):
+        """test adding ratings and the presence of average rating"""
+        product = Product.objects.first()
+        data = {
+            'score' : random.randint(0,10),
+            'review' : self.faker.paragraph()
+        }
+        response = self.client.post(f'/api/products/{product.id}/rate-product', data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertIsNotNone(product.average_rating)
